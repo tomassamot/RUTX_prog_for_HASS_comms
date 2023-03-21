@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+
+start_service() {
+        local enabled
+
+        config_load 'prog_for_mint'
+        config_get enabled input_sct 'enable' '0'
+        
+
+	if [ "$enabled" -eq 1 ]; then
+	        procd_open_instance
+	        procd_set_param command /usr/bin/prog_for_mint
+	        procd_set_param pidfile /var/run/device_inhibitor.pid
+		procd_set_param file /etc/config/device_inhibitor
+        	procd_close_instance
+	fi
+}
+
+service_triggers() {
+	procd_add_reload_trigger "prog_for_mint"
+}
+
+reload_service() {
+	stop
+	start
+}
