@@ -29,7 +29,6 @@ struct mosquitto *mosq_client;
 int main(int argc, char *argv[])
 {
     int ret=0, is_daemon = 0;
-    //char message[200];
     struct ubus_context *ubus_context;
     uint32_t id;
 
@@ -37,16 +36,13 @@ int main(int argc, char *argv[])
 
     openlog("device_inhibitor", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
 
-    if(is_daemon == 1)
-    {
-        int ret = become_daemon();
-        if(ret){
-            syslog(LOG_ERR, "Error starting daemon");
-            closelog();
-            return EXIT_FAILURE;
-        }
-        syslog(LOG_INFO, "Daemon started");
-    }
+    // ret = become_daemon();
+    // if(ret){
+    //     syslog(LOG_ERR, "Error starting daemon");
+    //     closelog();
+    //     return EXIT_FAILURE;
+    // }
+    // syslog(LOG_INFO, "Daemon started");
     
     signal(SIGKILL, handle_kill);
     signal(SIGTERM, handle_kill);
@@ -62,23 +58,12 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
 
     ubus_lookup_id(ubus_context, "system", &id);
-    int i = 0;
     rc = 0;
-    while(rc == 0 && program_is_killed == 0 && i != 3){
+    while(rc == 0 && program_is_killed == 0){
         sleep(2);
-        /*if(sysinfo(&info) != 0){
-            syslog(LOG_WARNING, "Failed to get system information\n");
-            sprintf(message, "{\"free_ram\":%d,\"total_ram\":%d}", 0,0);
-        }
-        else{
-            sprintf(message, "{\"free_ram\":%ld,\"total_ram\":%ld}", info.freeram, info.totalram);
-        }
-        ret = publish_mqtt_message(client, client_id, me_to_hass_topic, message);*/
         ret = ubus_invoke(ubus_context, id, "info", NULL, board_cb, NULL, 3000);
         if(ret != 0)
             syslog(LOG_ERR, "Failed to invoke ubus");
-        printf("i: %d\n", i);
-        i++;
     }
 
     disconnect_from_ubus(ubus_context);
@@ -106,7 +91,6 @@ static void board_cb(struct ubus_request *req, int type, struct blob_attr *msg)
     sprintf(message, "{\"free_ram\":%lld,\"total_ram\":%lld}", blobmsg_get_u64(memory[FREE_MEMORY]), blobmsg_get_u64(memory[TOTAL_MEMORY]));
     int ret = mosq_loop(mosq_client, me_to_hass_topic, message);
     if(ret != 0){
-        printf("Error RC after mosq_loop\n");
         rc+=1;
     }
 }
