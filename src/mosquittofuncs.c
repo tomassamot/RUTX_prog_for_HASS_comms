@@ -71,7 +71,7 @@ int mosq_loop(struct mosquitto *mosq, char *topic, char *payload)
 	 * qos = 2 - publish with QoS 2 for this example
 	 * retain = false - do not use the retained message feature for this message
 	 */
-	ret = mosquitto_publish(mosq, NULL, topic, strlen(payload), payload, 2, false);
+	ret = mosquitto_publish(mosq, NULL, topic, strlen(payload), payload, 0, false);
 	if(ret != MOSQ_ERR_SUCCESS){
 		fprintf(stderr, "Error publishing: %s\n", mosquitto_strerror(ret));
 		return ret;

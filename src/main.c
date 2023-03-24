@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     int ret=0, is_daemon = 0;
     //char message[200];
     struct ubus_context *ubus_context;
-    uint32_t id = 0;
+    uint32_t id;
 
     printf("Starting...\n");
 
@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
     if(ret != 0)
         exit(EXIT_FAILURE);
 
+    ubus_lookup_id(ubus_context, "system", &id);
     int i = 0;
     rc = 0;
     while(rc == 0 && program_is_killed == 0 && i != 3){
@@ -73,7 +74,9 @@ int main(int argc, char *argv[])
             sprintf(message, "{\"free_ram\":%ld,\"total_ram\":%ld}", info.freeram, info.totalram);
         }
         ret = publish_mqtt_message(client, client_id, me_to_hass_topic, message);*/
-        ubus_invoke(ubus_context, id, "info", NULL, board_cb, NULL, 3000);
+        ret = ubus_invoke(ubus_context, id, "info", NULL, board_cb, NULL, 3000);
+        if(ret != 0)
+            syslog(LOG_ERR, "Failed to invoke ubus");
         printf("i: %d\n", i);
         i++;
     }
@@ -103,6 +106,7 @@ static void board_cb(struct ubus_request *req, int type, struct blob_attr *msg)
     sprintf(message, "{\"free_ram\":%lld,\"total_ram\":%lld}", blobmsg_get_u64(memory[FREE_MEMORY]), blobmsg_get_u64(memory[TOTAL_MEMORY]));
     int ret = mosq_loop(mosq_client, me_to_hass_topic, message);
     if(ret != 0){
+        printf("Error RC after mosq_loop\n");
         rc+=1;
     }
 }
