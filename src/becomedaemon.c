@@ -28,9 +28,9 @@ int become_daemon()
         default: _exit(EXIT_SUCCESS);
     }
 
-    for (int x = sysconf(_SC_OPEN_MAX); x>=0; x--)
-    {
-        close (x);
-    }
+    // for (int x = sysconf(_SC_OPEN_MAX); x>=2; x--){
+    //     close (x);
+    // }
+
     return 0;
 }

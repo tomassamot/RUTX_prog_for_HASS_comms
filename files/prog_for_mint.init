@@ -1,19 +1,29 @@
 #!/bin/sh /etc/rc.common
 
 USE_PROCD=1
+START=20
+STOP=90
 
 start_service() {
         local enabled
+        local broker_address
+        local broker_port
+        local username
+        local password
 
         config_load 'prog_for_mint'
         config_get enabled input_sct 'enable' '0'
         
-
 	if [ "$enabled" -eq 1 ]; then
+		config_get broker_address input_sct 'broker_address' 'a'
+		config_get broker_port input_sct 'broker_port' 'a'
+		config_get username input_sct 'username' 'a'
+		config_get password input_sct 'password' 'a'
+
 	        procd_open_instance
-	        procd_set_param command /usr/bin/prog_for_mint
-	        procd_set_param pidfile /var/run/device_inhibitor.pid
-		procd_set_param file /etc/config/device_inhibitor
+	        procd_set_param command /usr/bin/prog_for_mint -D -a $broker_address -p $broker_port -U $username -P $password
+	        procd_set_param pidfile /var/run/prog_for_mint.pid
+		procd_set_param file /etc/config/prog_for_mint
         	procd_close_instance
 	fi
 }

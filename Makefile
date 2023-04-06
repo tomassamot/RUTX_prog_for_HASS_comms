@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/prog_for_mint
 	CATEGORY:=Base system
 	TITLE:=prog_for_mint
-	DEPENDS:=+libmosquitto +libubus +libubox +libblobmsg-json
+	DEPENDS:=+libargp +libmosquitto +libubus +libubox +libblobmsg-json
 endef
 
 define Package/prog_for_mint/description
