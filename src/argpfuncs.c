@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <syslog.h>
+#include <argp.h>
 
 #include "argpfuncs.h"
 
-#include <argp.h>
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state);
 

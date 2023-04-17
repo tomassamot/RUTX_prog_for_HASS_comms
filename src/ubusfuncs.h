@@ -1,8 +1,8 @@
+#ifndef UBUSFUNCS_H
+#define UBUSFUNCS_H
+
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
-
-
-
 
 
 /*
@@ -87,9 +87,6 @@ static const struct blobmsg_policy set_ipaddr_policy[__UCI_SET_MAX] = {
 *
 */
 
-
-
-
 static const struct blobmsg_policy status_policy[2] = {
 	[0] = { .name = "radio0", .type = BLOBMSG_TYPE_TABLE },
 	[1] = { .name = "radio1", .type = BLOBMSG_TYPE_TABLE },
@@ -123,3 +120,5 @@ int get_static_ip(struct ubus_context *ctx);
 int set_new_static_ip(struct ubus_context *ctx, char *ip);
 int commit_uci_changes(struct ubus_context *ctx, const char *config);
 char* get_radio_info(struct blob_attr *status[], int i);
+
+#endif

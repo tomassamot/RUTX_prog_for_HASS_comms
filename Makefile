@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/prog_for_mint
 	CATEGORY:=Base system
 	TITLE:=prog_for_mint
-	DEPENDS:=+libargp +libmosquitto +libubus +libubox +libblobmsg-json
+	DEPENDS:=+libargp +libmosquitto +libubus +libubox +libblobmsg-json +liblua +liblualib
 endef
 
 define Package/prog_for_mint/description
@@ -23,6 +23,10 @@ define Package/prog_for_mint/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/prog_for_mint $(1)/usr/bin
 	$(INSTALL_BIN) ./files/prog_for_mint.init $(1)/etc/init.d/prog_for_mint
 	$(INSTALL_CONF) ./files/prog_for_mint.config $(1)/etc/config/prog_for_mint
+	$(INSTALL_DIR) $(1)/usr/mylua
+	$(INSTALL_DIR) $(1)/usr/mylua/scripts
+	$(INSTALL_DIR) $(1)/usr/mylua/outputs
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/*.lua $(1)/usr/mylua/scripts
 endef
 
 $(eval $(call BuildPackage,prog_for_mint))

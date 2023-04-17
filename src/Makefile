@@ -1,7 +1,7 @@
 BIN:=prog_for_mint
 SRCS:=$(wildcard *.c)
-CPPFLAGS:= #-Wall #-I/home/studentas/Documents/mosquitto/include
-LDFLAGS:= -largp -lmosquitto -lubus -lubox -lblobmsg_json#-L/home/studentas/Documents/mosquitto/lib -lmosquitto
+CPPFLAGS:=
+LDFLAGS:= -largp -lmosquitto -lubus -lubox -lblobmsg_json -llua -llualib 
 
 .PHONY: all clean debug
 

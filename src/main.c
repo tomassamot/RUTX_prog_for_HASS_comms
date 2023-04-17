@@ -10,25 +10,20 @@
 #include "becomedaemon.h"
 #include "mosquittofuncs.h"
 #include "ubusfuncs.h"
-
+#include "luafuncs.h"
 
 static void handle_kill(int signum);
 static int send_ram_information(struct ubus_context *ubus_context);
 static void board_cb(struct ubus_request *req, int type, struct blob_attr *msg);
 static int send_wireless_information(struct ubus_context *ubus_context);
 static void process_wireless_info(struct ubus_request *req, int type, struct blob_attr *msg);
-
-
-// char *ADDRESS = "192.168.10.103";
-// int PORT = 1883;
-// // // char *new_ip_topic = "home-assistant/mint/new_ip";
-// // //char *hass_to_me_topic = "";
-// char *USERNAME = "broker";
-// char *PASSWORD = "brokerpass";
+static void start_loop();
 
 struct arguments arguments = { {[0 ... 19] = '\0'}, 0, {[0 ... 49] = '\0'}, {[0 ... 49] = '\0'}, 0 };
-struct mosquitto *mosq;//, *sub_mosq;
+struct mosquitto *mosq;
 int program_is_killed = 0, rc = 0;
+bool first_time = 1;
+
 const char *CLIENT_ID = "mint_caller_prog";
 const char *RAM_TOPIC = "home-assistant/mint/ram";
 const char *WIRELESS_TOPIC = "home-assistant/mint/wireless";
@@ -36,9 +31,7 @@ const char *WIRELESS_TOPIC = "home-assistant/mint/wireless";
 int main(int argc, char *argv[])
 {
     int ret=0;
-    bool first_time = 1;
-    struct ubus_context *ubus_context;
-
+    
     start_parser(argc, argv, &arguments);
     printf("Starting...\n");
 
@@ -63,6 +56,16 @@ int main(int argc, char *argv[])
     signal(SIGUSR1, handle_kill);
 
     mosquitto_lib_init();
+
+    start_loop();
+    
+    mosquitto_lib_cleanup();
+    return 0;
+}
+static void start_loop()
+{
+    struct ubus_context *ubus_context;
+    int ret = 0;
     while(program_is_killed == 0){
         if(first_time == 1)
             first_time = 0;
@@ -76,16 +79,16 @@ int main(int argc, char *argv[])
         syslog(LOG_INFO, "Connected to ubus");  
 
         syslog(LOG_INFO, "Trying to connect to MQTT broker...");
-        ret = mosq_connect(&mosq, arguments.broker_address, arguments.broker_port, CLIENT_ID, arguments.username, arguments.password);
+        ret = mosq_connect(&mosq, ubus_context, arguments.broker_address, arguments.broker_port, CLIENT_ID, arguments.username, arguments.password);
         if(ret != 0)
             continue;
         syslog(LOG_INFO, "Connected to MQTT broker");
 
         rc = 0;
         while(rc == 0 && program_is_killed == 0){
-            
-			rc += send_ram_information(ubus_context);
-            rc += send_wireless_information(ubus_context);
+			// rc += send_ram_information(ubus_context);
+            // rc += send_wireless_information(ubus_context);
+            rc += start_lua_scripts(mosq);
             sleep(5);
         }
 
@@ -94,8 +97,6 @@ int main(int argc, char *argv[])
         syslog(LOG_INFO, "Disconnecting from MQTT broker");  
         mosq_disconnect(mosq);
     }
-    mosquitto_lib_cleanup();
-    return 0;
 }
 static int send_ram_information(struct ubus_context *ubus_context)
 {
