@@ -27,10 +27,6 @@ function get_data()
 
     local output = json.encode(results)
 
-    -- local file = io.open(script_path().."../outputs/mint-localtime.txt", "w")
-    -- file:write(output)
-    -- file:close()
-
     return output
 end
 function destroy()

@@ -12,12 +12,10 @@
 
 #include "luafuncs.h"
 
-// #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define PREFIX_SEPERATOR "-"
 #define EXTENSION_SEPERATOR "."
 
 static void call_lua_script(lua_State *L, char* path, char* topic, struct mosquitto *mosq);
-// static void create_message_and_publish(char name_with_ext[]);
 
 char LUA_SCRIPTS_DIR[] = "/usr/mylua/scripts/";
 char LUA_OUTPUTS_DIR[] = "/usr/mylua/outputs/";
@@ -79,7 +77,6 @@ static void call_lua_script(lua_State *L, char* path, char* topic, struct mosqui
         return;
     }
     
-    
     lua_pcall(L, 0, 0, 0);
 
     lua_getglobal(L, "init");
@@ -88,8 +85,6 @@ static void call_lua_script(lua_State *L, char* path, char* topic, struct mosqui
         syslog(LOG_ERR, "Failed to run script: %s\n", lua_tostring(L, -1));
         return;
     }
-    
-    
 
     lua_getglobal(L, "get_data");
     ret = lua_pcall(L, 0, 1, 0);
@@ -101,12 +96,6 @@ static void call_lua_script(lua_State *L, char* path, char* topic, struct mosqui
     const char *result = lua_tostring(L, -1);
     mosq_loop(mosq, topic, result);
     
-    // printf("i have topic:\n");
-    // printf("%s\n", topic);
-    // printf("i have result:\n");
-    // printf("%s\n", result);
-    
-    
     lua_getglobal(L, "destroy");
     ret = lua_pcall(L, 0, 0, 0);
     if (ret){
@@ -114,43 +103,3 @@ static void call_lua_script(lua_State *L, char* path, char* topic, struct mosqui
         return;
     }
 }
-// static void create_message_and_publish(char name_with_ext[])
-// {
-//     DIR *d;
-//     struct dirent *output;
-    
-//     char *name_without_ext = strtok(name_with_ext, EXTENSION_SEPERATOR);
-
-//     d = opendir(LUA_OUTPUTS_DIR);
-//     if(d == NULL)
-//         syslog(LOG_ERR, "Couldn't open directory in path: %s", LUA_OUTPUTS_DIR);
-
-//     syslog(LOG_INFO, "Calling Lua scripts");
-//     while ((output = readdir(d)) != NULL) {
-//         char output_name_with_ext[40];
-//         strcpy(output_name_with_ext, output->d_name);
-//         char *output_name_without_ext = strtok(output_name_with_ext, EXTENSION_SEPERATOR);
-//         if(output_name_without_ext != NULL && strcmp(name_without_ext, output_name_without_ext) == 0){
-//             printf("text file found\n");
-//             // FILE *file = NULL;
-//             // size_t path_len = len(LUA_OUTPUTS_DIR)+len(output_name_with_ext);
-//             // char path[path_len];
-            
-//             // sprintf(path, "%s%s", LUA_OUTPUTS_DIR, output_name_with_ext);
-//             // file = fopen(path, "r");
-//             // if(file == NULL){
-//             //     syslog(LOG_ERR, "Failed to open for reading file: %s", path);
-//             //     continue;
-//             // }
-//             // while((int ret = getc(file)) != EOF)
-
-//             // close(file);
-
-
-//             break;
-//         }
-
-//     }
-//     printf("search end\n");
-//     closedir(d);
-// }

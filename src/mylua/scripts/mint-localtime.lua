@@ -1,6 +1,5 @@
 
 require "ubus"
--- require "uloop"
 
 package.path = package.path .. ";/usr/mylua/scripts/json.lua"
 json = require "json"
@@ -22,11 +21,6 @@ function get_data()
     end
 
     local output = json.encode(results.localtime)
-
-    -- local file = io.open(script_path().."../outputs/mint-localtime.txt", "w")
-    -- file:write(output)
-    -- file:close()
-
     return output
 end
 function destroy()
