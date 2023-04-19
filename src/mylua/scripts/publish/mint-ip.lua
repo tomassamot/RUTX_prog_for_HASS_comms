@@ -1,11 +1,11 @@
-
 require "ubus"
+-- require "uloop"
 
-package.path = package.path .. ";/usr/mylua/scripts/json.lua"
+package.path = package.path .. ";/usr/mylua/scripts/packages/json.lua"
+-- package.path = package.path .. ";/home/studentas/Documents/RUTX_R_GPL_00.02.06.1/gpl/package/prog_for_mint/src/mylua/scripts/json.lua"
 json = require "json"
 
 local ubus_conn
-local program_is_killed = false
 
 function init()
     ubus_conn = ubus.connect()
@@ -14,13 +14,18 @@ function init()
     end
 end
 function get_data()
-    local path, method = "system", "info"
-    local results = ubus_conn:call(path, method, {})
+    local path, method, object = "uci", "get", {}
+    object.config = "network"
+    object.section = "lan"
+    object.option = "ipaddr"
+
+    local results = ubus_conn:call(path, method, object)
     if not results then
         error("Failed to call ubus with path: "..path..", and method: "..method)
     end
 
-    local output = json.encode(results.localtime)
+    local output = json.encode(results)
+
     return output
 end
 function destroy()

@@ -1,12 +1,10 @@
 
 require "ubus"
--- require "uloop"
 
-package.path = package.path .. ";/usr/mylua/scripts/json.lua"
+package.path = package.path .. ";/usr/mylua/scripts/packages/json.lua"
 json = require "json"
 
 local ubus_conn
-local program_is_killed = false
 
 function init()
     ubus_conn = ubus.connect()
@@ -15,18 +13,13 @@ function init()
     end
 end
 function get_data()
-    local path, method, object = "uci", "get", {}
-    object.config = "network"
-    object.section = "lan"
-    object.option = "ipaddr"
-
-    local results = ubus_conn:call(path, method, object)
+    local path, method = "system", "info"
+    local results = ubus_conn:call(path, method, {})
     if not results then
         error("Failed to call ubus with path: "..path..", and method: "..method)
     end
 
-    local output = json.encode(results)
-
+    local output = json.encode(results.memory)
     return output
 end
 function destroy()

@@ -12,6 +12,8 @@
 #include "ubusfuncs.h"
 #include "luafuncs.h"
 
+#include "constants.h"
+
 static void handle_kill(int signum);
 static int send_ram_information(struct ubus_context *ubus_context);
 static void board_cb(struct ubus_request *req, int type, struct blob_attr *msg);
@@ -24,9 +26,9 @@ struct mosquitto *mosq;
 int program_is_killed = 0, rc = 0;
 bool first_time = 1;
 
-const char *CLIENT_ID = "mint_caller_prog";
-const char *RAM_TOPIC = "home-assistant/mint/ram";
-const char *WIRELESS_TOPIC = "home-assistant/mint/wireless";
+// const char *CLIENT_ID = "mint_caller_prog";
+// const char *RAM_TOPIC = "home-assistant/mint/ram";
+// const char *WIRELESS_TOPIC = "home-assistant/mint/wireless";
 
 int main(int argc, char *argv[])
 {
@@ -88,7 +90,7 @@ static void start_loop()
         while(rc == 0 && program_is_killed == 0){
 			// rc += send_ram_information(ubus_context);
             // rc += send_wireless_information(ubus_context);
-            rc += start_lua_scripts(mosq);
+            rc += find_and_start_lua_publish_scripts(mosq);
             sleep(5);
         }
 

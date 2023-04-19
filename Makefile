@@ -25,8 +25,13 @@ define Package/prog_for_mint/install
 	$(INSTALL_CONF) ./files/prog_for_mint.config $(1)/etc/config/prog_for_mint
 	$(INSTALL_DIR) $(1)/usr/mylua
 	$(INSTALL_DIR) $(1)/usr/mylua/scripts
-	$(INSTALL_DIR) $(1)/usr/mylua/outputs
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/*.lua $(1)/usr/mylua/scripts
+	$(INSTALL_DIR) $(1)/usr/mylua/scripts/publish
+	$(INSTALL_DIR) $(1)/usr/mylua/scripts/subscribe
+	$(INSTALL_DIR) $(1)/usr/mylua/scripts/packages
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/publish/*.lua $(1)/usr/mylua/scripts/publish
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/subscribe/*.lua $(1)/usr/mylua/scripts/subscribe
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/packages/*.lua $(1)/usr/mylua/scripts/packages
+
 endef
 
 $(eval $(call BuildPackage,prog_for_mint))

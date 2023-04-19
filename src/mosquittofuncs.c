@@ -3,19 +3,24 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "mosquittofuncs.h"
+#include "constants.h"
+#include "luafuncs.h"
 
 static void on_connect(struct mosquitto *mosq, void *obj, int reason_code);
 static void on_disconnect(struct mosquitto *mosq, void *obj, int reason_maybe);
 static void on_publish(struct mosquitto *mosq, void *obj, int mid);
+static void subscribe_for_each_lua_subscribe_script(struct mosquitto *mosq);
 static void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos);
 static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg);
 
-const char *NEW_IP_TOPIC = "home-assistant/mint/new_ip";
-const char *INIT_TOPIC = "home-assistant/mint/init";
-const char *EMOTION_REQUEST_TOPIC = "home-assistant/mint/emotion_req";
-const char *EMOTION_RESPONSE_TOPIC = "home-assistant/mint/emotion_res";
+// const char *NEW_IP_TOPIC = "home-assistant/mint/new_ip";
+// const char *INIT_TOPIC = "home-assistant/mint/init";
+// const char *EMOTION_REQUEST_TOPIC = "home-assistant/mint/emotion_req";
+// const char *EMOTION_RESPONSE_TOPIC = "home-assistant/mint/emotion_res";
+// const char *BAN_DEVICE_TOPIC = "home-assistant/mint/ban_device";
 
 int ret = 0;
 bool is_connected = 0;
@@ -88,6 +93,54 @@ static void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 	ret = mosquitto_subscribe(mosq, NULL, EMOTION_REQUEST_TOPIC, 1);
 	if(ret != MOSQ_ERR_SUCCESS)
 		syslog(LOG_ERR, "Error subscribing: %s", mosquitto_strerror(ret));
+
+	// ret = mosquitto_subscribe(mosq, NULL, BAN_DEVICE_TOPIC, 1);
+	// if(ret != MOSQ_ERR_SUCCESS)
+	// 	syslog(LOG_ERR, "Error subscribing: %s", mosquitto_strerror(ret));
+
+	subscribe_for_each_lua_subscribe_script(mosq);
+
+}
+static void subscribe_for_each_lua_subscribe_script(struct mosquitto *mosq)
+{
+    DIR *d;
+    struct dirent *dir;
+    int ret;
+
+    d = opendir(LUA_SUBSCRIBE_SCRIPTS_PATH);
+    if(d == NULL){
+        syslog(LOG_ERR, "Couldn't open directory in path: %s", LUA_SUBSCRIBE_SCRIPTS_PATH);
+        return;
+    }
+
+    syslog(LOG_INFO, "Subscribing to topics for each Lua subscribe script");
+    while ((dir = readdir(d)) != NULL) {
+        char name[30];
+        strcpy(name, dir->d_name);
+
+        strtok(dir->d_name, EXTENSION_SEPERATOR); // removes extension
+
+        char temp[30];
+        sprintf(temp, "%s", dir->d_name);
+
+        char *prefix = strtok(temp, PREFIX_SEPERATOR); // gets "mint" prefix 
+        char *name_without_prefix = strtok(NULL, PREFIX_SEPERATOR); // gets after prefix
+        if(strcmp(prefix, "mint") == 0){
+            char topic[50];
+            sprintf(topic, "home-assistant/mint/%s", name_without_prefix);
+
+			syslog(LOG_INFO, "Subscribing to topic: %s", topic);
+            ret = mosquitto_subscribe(mosq, NULL, topic, 1);
+			if(ret != MOSQ_ERR_SUCCESS)
+				syslog(LOG_ERR, "Error subscribing: %s", mosquitto_strerror(ret));
+        }
+
+    }
+    closedir(d);
+
+    // char file_name[] = "ban";
+    // char input_json[] = "{\"addr\": \"4A:47:ED:BC:3F:B9\", \"reason\": 1, \"deauth\": false, \"ban_time\": 5000, \"ifname\": \"wlan0\"}";
+    // find_and_start_lua_subscribe_script(file_name, input_json);
 }
 static void on_disconnect(struct mosquitto *mosq, void *obj, int reason_maybe)
 {
@@ -117,6 +170,7 @@ static void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_cou
 
 static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
 {
+	syslog(LOG_INFO, "on_message triggered");
 	syslog(LOG_INFO, "%s %d %s\n", msg->topic, msg->qos, (char *)msg->payload);
 		if(strcmp(msg->topic, NEW_IP_TOPIC) == 0){
 			syslog(LOG_INFO, "Received request to change IP");
@@ -137,6 +191,19 @@ static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto
 			}
 		}
 		else{
-			syslog(LOG_WARNING, "Received message to a topic, which has no implementation");
+			printf("olleh1\n");
+			char topic[50];
+			strcpy(topic, msg->topic);
+
+			printf("olleh2\n");
+			char *topic_start = strtok(topic, MQTT_TOPIC_SEPERATOR);
+			printf("olleh3\n");
+			char *topic_mid = strtok(NULL, MQTT_TOPIC_SEPERATOR);
+			printf("olleh4\n");
+			char *topic_end = strtok(NULL, MQTT_TOPIC_SEPERATOR);
+			printf("olleh5\n");
+
+			find_and_start_lua_subscribe_script(topic_end, msg->payload);
+			printf("olleh6\n");
 		}
 }
