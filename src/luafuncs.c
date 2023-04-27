@@ -13,14 +13,11 @@
 #include "luafuncs.h"
 #include "constants.h"
 
-// #define PREFIX_SEPERATOR "-"
-// #define EXTENSION_SEPERATOR "."
-
 static void call_lua_subscribe_script(lua_State *L, char* path, char *input_json);
 static void call_lua_publish_script(lua_State *L, char* path, char* topic, struct mosquitto *mosq);
+static bool check_if_mod_name_is_allowed(char name[], struct ll_module *allowed_mod_list);
 
-
-int find_and_start_lua_subscribe_script(char topic_end[], char input_json[])
+int find_and_start_lua_subscribe_script(char topic_end[], char input_json[], struct ll_module *allowed_sub_modules)
 {
     lua_State *L;
     DIR *d;
@@ -28,49 +25,44 @@ int find_and_start_lua_subscribe_script(char topic_end[], char input_json[])
     int ret;
     char script_name[50];
 
-    printf("hello1\n");
     L = luaL_newstate();
     luaL_openlibs(L);
     
-    printf("hello2\n");
     d = opendir(LUA_SUBSCRIBE_SCRIPTS_PATH);
     if(d == NULL){
         syslog(LOG_ERR, "Couldn't open directory in path: %s", LUA_SUBSCRIBE_SCRIPTS_PATH);
         return 1;
     }
 
-    printf("hello3\n");
     sprintf(script_name, "mint-%s.lua", topic_end);
 
     while ((dir = readdir(d)) != NULL) {
-        printf("hello4\n");
-        if(strcmp(script_name, dir->d_name) == 0){
-            printf("hello4.1\n");
-            char full_path[60];
-            sprintf(full_path, "%s%s", LUA_SUBSCRIBE_SCRIPTS_PATH, script_name);
-
-            printf("hello4.2\n");
-            call_lua_subscribe_script(L, full_path, input_json);
-            printf("hello4.3\n");
-            break;
+        if(strcmp(script_name, dir->d_name) != 0){
+            // current file in directory and expected script_name do not match
+            continue;
         }
-        printf("hello5\n");
+        char name[30]; // file name with extension
+        strcpy(name, dir->d_name);
 
+        strtok(dir->d_name, EXTENSION_SEPERATOR); // removes extension
+
+        if(check_if_mod_name_is_allowed(dir->d_name, allowed_sub_modules) == false)
+            continue;
+
+        char full_path[60];
+        sprintf(full_path, "%s%s", LUA_SUBSCRIBE_SCRIPTS_PATH, script_name);
+        
+        call_lua_subscribe_script(L, full_path, input_json);
+        break;
     }
     closedir(d);
-
-    // char ban_dev_path[] = "/usr/mylua/scripts/subscribe/mint-ban.lua";
-    // char input_json[] = "{\"addr\": \"4A:47:ED:BC:3F:B9\", \"reason\": 1, \"deauth\": false, \"ban_time\": 5}";
-    // call_lua_subscribe_script(L, ban_dev_path, input_json);
 
     lua_close(L);
 
     return 0;
-
-    return 0;
 }
 
-int find_and_start_lua_publish_scripts(struct mosquitto *mosq)
+int find_and_start_lua_publish_scripts(struct mosquitto *mosq, struct ll_module *allowed_pub_modules)
 {
     lua_State *L;
     DIR *d;
@@ -88,10 +80,13 @@ int find_and_start_lua_publish_scripts(struct mosquitto *mosq)
 
     syslog(LOG_INFO, "Calling Lua scripts");
     while ((dir = readdir(d)) != NULL) {
-        char name[30];
+        char name[30]; // file name with extension
         strcpy(name, dir->d_name);
 
         strtok(dir->d_name, EXTENSION_SEPERATOR); // removes extension
+
+        if(check_if_mod_name_is_allowed(dir->d_name, allowed_pub_modules) == false)
+            continue;
 
         char temp[30];
         sprintf(temp, "%s", dir->d_name);
@@ -111,13 +106,20 @@ int find_and_start_lua_publish_scripts(struct mosquitto *mosq)
     }
     closedir(d);
 
-    // char ban_dev_path[] = "/usr/mylua/scripts/subscribe/mint-ban.lua";
-    // char input_json[] = "{\"addr\": \"4A:47:ED:BC:3F:B9\", \"reason\": 1, \"deauth\": false, \"ban_time\": 5}";
-    // call_lua_subscribe_script(L, ban_dev_path, input_json);
-
     lua_close(L);
 
     return 0;
+}
+
+static bool check_if_mod_name_is_allowed(char name[], struct ll_module *allowed_mod_list)
+{
+    struct ll_module *mod = allowed_mod_list;
+    while(mod != NULL){
+        if(strcmp(mod->name, name) == 0)
+            return true;
+        mod = mod->next;
+    }
+    return false;
 }
 
 static void call_lua_subscribe_script(lua_State *L, char* path, char *input_json)

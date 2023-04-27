@@ -16,20 +16,15 @@ static void subscribe_for_each_lua_subscribe_script(struct mosquitto *mosq);
 static void on_subscribe(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos);
 static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg);
 
-// const char *NEW_IP_TOPIC = "home-assistant/mint/new_ip";
-// const char *INIT_TOPIC = "home-assistant/mint/init";
-// const char *EMOTION_REQUEST_TOPIC = "home-assistant/mint/emotion_req";
-// const char *EMOTION_RESPONSE_TOPIC = "home-assistant/mint/emotion_res";
-// const char *BAN_DEVICE_TOPIC = "home-assistant/mint/ban_device";
-
 int ret = 0;
 bool is_connected = 0;
 char *current_emotion = "das";
-struct ubus_context *ubus_context = NULL;
+struct ll_module *sub_modules = NULL;
 
-int mosq_connect(struct mosquitto **mosq, struct ubus_context *ubus_ctx, char *broker, int port, const char *client_id, char *username, char *password)
+int mosq_connect(struct mosquitto **mosq, char *broker, int port, const char *client_id, char *username, char *password, struct ll_module *recv_sub_modules)
 {
-	ubus_context = ubus_ctx;
+	sub_modules = recv_sub_modules;
+
 	*mosq = mosquitto_new(NULL, true, NULL);
 	if(*mosq == NULL){
 		fprintf(stderr, "Error: Out of memory.\n");
@@ -71,7 +66,6 @@ int mosq_loop(struct mosquitto *mosq, const char *topic, char *payload)
 }
 int mosq_disconnect(struct mosquitto *mosq)
 {
-	ubus_context = NULL;
 	mosquitto_disconnect(mosq);
 	mosquitto_loop_stop(mosq, false);
 	mosquitto_destroy(mosq);
@@ -93,10 +87,6 @@ static void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 	ret = mosquitto_subscribe(mosq, NULL, EMOTION_REQUEST_TOPIC, 1);
 	if(ret != MOSQ_ERR_SUCCESS)
 		syslog(LOG_ERR, "Error subscribing: %s", mosquitto_strerror(ret));
-
-	// ret = mosquitto_subscribe(mosq, NULL, BAN_DEVICE_TOPIC, 1);
-	// if(ret != MOSQ_ERR_SUCCESS)
-	// 	syslog(LOG_ERR, "Error subscribing: %s", mosquitto_strerror(ret));
 
 	subscribe_for_each_lua_subscribe_script(mosq);
 
@@ -137,10 +127,6 @@ static void subscribe_for_each_lua_subscribe_script(struct mosquitto *mosq)
 
     }
     closedir(d);
-
-    // char file_name[] = "ban";
-    // char input_json[] = "{\"addr\": \"4A:47:ED:BC:3F:B9\", \"reason\": 1, \"deauth\": false, \"ban_time\": 5000, \"ifname\": \"wlan0\"}";
-    // find_and_start_lua_subscribe_script(file_name, input_json);
 }
 static void on_disconnect(struct mosquitto *mosq, void *obj, int reason_maybe)
 {
@@ -172,15 +158,7 @@ static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto
 {
 	syslog(LOG_INFO, "on_message triggered");
 	syslog(LOG_INFO, "%s %d %s\n", msg->topic, msg->qos, (char *)msg->payload);
-		if(strcmp(msg->topic, NEW_IP_TOPIC) == 0){
-			syslog(LOG_INFO, "Received request to change IP");
-			syslog(LOG_INFO, "msg: %s", msg->payload);
-
-			ret = set_new_static_ip(ubus_context, msg->payload);
-			if(ret == 0)
-				commit_uci_changes(ubus_context, "network");
-		}
-		else if(strcmp(msg->topic, EMOTION_REQUEST_TOPIC) == 0){
+		if(strcmp(msg->topic, EMOTION_REQUEST_TOPIC) == 0){
 			syslog(LOG_INFO, "Received request to send current emotion");
 			char response[100];
 			sprintf(response, "{ \"emotion\": \"%s\" }", current_emotion);
@@ -191,19 +169,13 @@ static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto
 			}
 		}
 		else{
-			printf("olleh1\n");
 			char topic[50];
 			strcpy(topic, msg->topic);
 
-			printf("olleh2\n");
-			char *topic_start = strtok(topic, MQTT_TOPIC_SEPERATOR);
-			printf("olleh3\n");
-			char *topic_mid = strtok(NULL, MQTT_TOPIC_SEPERATOR);
-			printf("olleh4\n");
-			char *topic_end = strtok(NULL, MQTT_TOPIC_SEPERATOR);
-			printf("olleh5\n");
+			char *topic_start = strtok(topic, MQTT_SUBTOPIC_SEPERATOR);
+			char *topic_mid = strtok(NULL, MQTT_SUBTOPIC_SEPERATOR);
+			char *topic_end = strtok(NULL, MQTT_SUBTOPIC_SEPERATOR);
 
-			find_and_start_lua_subscribe_script(topic_end, msg->payload);
-			printf("olleh6\n");
+			find_and_start_lua_subscribe_script(topic_end, msg->payload, sub_modules);
 		}
 }

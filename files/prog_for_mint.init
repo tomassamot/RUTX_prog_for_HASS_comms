@@ -5,26 +5,62 @@ START=20
 STOP=90
 
 start_service() {
-        local enabled
-        local broker_address
-        local broker_port
-        local username
-        local password
+	handle_module(){
+		local config="$1"
+		local mod_enabled
+		local mod_name
+		local mod_type
+		config_get mod_enabled $config 'enable' '0'
 
-        config_load 'prog_for_mint'
-        config_get enabled input_sct 'enable' '0'
+		if [ "$mod_enabled" -eq 1 ]; then
+			config_get mod_name $config 'name' 'a'
+			config_get mod_type $config 'type' 'a'
+			if [ "$mod_type" = "publish" ]; then
+				if [ "$pub_first_time" -eq 1 ]; then
+					pub_modules=$mod_name
+					pub_first_time=0
+				else
+					pub_modules=$pub_modules,$mod_name
+				fi
+			elif [ "$mod_type" = "subscribe" ]; then
+				if [ "$sub_first_time" = 1 ]; then
+					sub_modules=$mod_name
+					sub_first_time=0
+				else
+					sub_modules=$sub_modules,$mod_name
+				fi
+			else
+				echo 'Warning: Unexpected module type'
+			fi
+		fi
+	}
+	
+	local enabled
+	local broker_address
+	local broker_port
+	local username
+	local password
+	local pub_modules
+	local sub_modules
+	local pub_first_time=1
+	local sub_first_time=1
+
+	config_load 'prog_for_mint'
+	config_get enabled input_sct 'enable' '0'
         
 	if [ "$enabled" -eq 1 ]; then
 		config_get broker_address input_sct 'broker_address' 'a'
 		config_get broker_port input_sct 'broker_port' 'a'
 		config_get username input_sct 'username' 'a'
 		config_get password input_sct 'password' 'a'
+		config_foreach handle_module module
 
-	        procd_open_instance
-	        procd_set_param command /usr/bin/prog_for_mint -D -a $broker_address -p $broker_port -U $username -P $password
-	        procd_set_param pidfile /var/run/prog_for_mint.pid
+		procd_open_instance
+		procd_set_param command /usr/bin/prog_for_mint -D -a $broker_address -p $broker_port -U $username -P $password -b \"$pub_modules\" -s \"$sub_modules\"
+		echo command: /usr/bin/prog_for_mint -D -a $broker_address -p $broker_port -U $username -P $password -b \"$pub_modules\" -s \"$sub_modules\"
+		procd_set_param pidfile /var/run/prog_for_mint.pid
 		procd_set_param file /etc/config/prog_for_mint
-        	procd_close_instance
+		procd_close_instance
 	fi
 }
 

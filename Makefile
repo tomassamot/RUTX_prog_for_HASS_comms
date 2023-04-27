@@ -9,7 +9,8 @@ include $(INCLUDE_DIR)/package.mk
 define Package/prog_for_mint
 	CATEGORY:=Base system
 	TITLE:=prog_for_mint
-	DEPENDS:=+libargp +libmosquitto +libubus +libubox +libblobmsg-json +liblua +liblualib
+	DEPENDS:= +luci-lib-json +libargp +libmosquitto +libubus +libubox +libblobmsg-json +liblua +liblualib
+	LUCI_DEPENDS:= +luci-lib-json
 endef
 
 define Package/prog_for_mint/description
@@ -28,9 +29,9 @@ define Package/prog_for_mint/install
 	$(INSTALL_DIR) $(1)/usr/mylua/scripts/publish
 	$(INSTALL_DIR) $(1)/usr/mylua/scripts/subscribe
 	$(INSTALL_DIR) $(1)/usr/mylua/scripts/packages
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/publish/*.lua $(1)/usr/mylua/scripts/publish
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/subscribe/*.lua $(1)/usr/mylua/scripts/subscribe
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/mylua/scripts/packages/*.lua $(1)/usr/mylua/scripts/packages
+	$(INSTALL_DATA) ./files/mylua/scripts/publish/*.lua $(1)/usr/mylua/scripts/publish
+	$(INSTALL_DATA) ./files/mylua/scripts/subscribe/*.lua $(1)/usr/mylua/scripts/subscribe
+	$(INSTALL_DATA) ./files/mylua/scripts/packages/*.lua $(1)/usr/mylua/scripts/packages
 
 endef
 

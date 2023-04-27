@@ -16,6 +16,6 @@
 
 #define PREFIX_SEPERATOR "-"
 #define EXTENSION_SEPERATOR "."
-#define MQTT_TOPIC_SEPERATOR "/"
+#define MQTT_SUBTOPIC_SEPERATOR "/"
 
 #endif
