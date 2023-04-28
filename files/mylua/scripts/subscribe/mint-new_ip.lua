@@ -18,11 +18,11 @@ function set_data(json_str)
     object.section = "lan"
     object.values = {}
     object.values.ipaddr = data["new_ip"]
-    ubus_conn:call(path, method, luci.jsonc.parse(luci.jsonc.stringify(object)))
+    ubus_conn:call(path, method, object)
 
     path, method, object = "uci", "commit", {}
     object.config = "network"
-    ubus_conn:call(path, method, luci.jsonc.parse(luci.jsonc.stringify(object)))
+    ubus_conn:call(path, method, object)
 end
 function destroy()
     ubus_conn:close()
