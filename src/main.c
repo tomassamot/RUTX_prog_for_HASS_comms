@@ -65,8 +65,7 @@ static void start_loop()
             first_time = 0;
         else
             sleep(5);
-
-        syslog(LOG_INFO, "Trying to connect to MQTT broker...");
+        syslog(LOG_INFO, "Trying to connect to MQTT broker...\n");
         ret = mosq_connect(&mosq, arguments.broker_address, arguments.broker_port, CLIENT_ID, arguments.username, arguments.password, arguments.sub_modules);
         if(ret != 0)
             continue;

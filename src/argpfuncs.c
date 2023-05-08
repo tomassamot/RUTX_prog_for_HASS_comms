@@ -39,10 +39,8 @@ void start_parser(int argc, char **argv, struct arguments *arguments)
 static void set_mods(struct ll_module **list, char *arg)
 {
 	char *without_quotation = strtok(arg, "\"");
-	syslog(LOG_INFO, "without_quotation: %s\n", without_quotation);
 	char *token = strtok(without_quotation, ",");
 	while(token != NULL){
-		syslog(LOG_INFO, "token: %s\n", token);
 		struct ll_module *module = ll_module_create(token);
 		ll_module_add(list, module);
 		token = strtok(NULL, ",");

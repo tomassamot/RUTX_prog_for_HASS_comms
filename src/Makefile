@@ -11,4 +11,4 @@ $(BIN): $(SRCS)
 	$(CC) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	$(RM) $(BIN) $(SRCS)
+	$(RM) $(BIN)
