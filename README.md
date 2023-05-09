@@ -1,5 +1,6 @@
 # RUTX_prog_for_HASS_comms
 Program for communicating with Home Assistant using MQTT.  
+The program has the following third-party dependencies: libargp, libmosquitto, libubus, libubox, libblobmsg-json, liblua  
   
 ### Options:
 -a --broker-address=BROADDR (Required. MQTT broker IP address.)  
